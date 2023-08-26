@@ -13,7 +13,7 @@ import (
 )
 
 type Callbacks struct {
-	ScheduleTask endpoints.ScheduleTaskCallback
+	RunTask endpoints.RunTaskCallback
 }
 
 type AgentServer struct {
@@ -79,7 +79,7 @@ func NewServer(authToken string, callbacks Callbacks) *AgentServer {
 
 	// all routes from here down require authentication
 	r.Get("/healthz", endpoints.Healthz)
-	r.Post("/task/create", endpoints.ScheduleTask(callbacks.ScheduleTask))
+	r.Post("/task/run", endpoints.RunTask(callbacks.RunTask))
 
 	return &AgentServer{router: r}
 }
