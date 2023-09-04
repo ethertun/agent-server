@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,9 +13,9 @@ import (
 )
 
 type RunTaskRequest struct {
-	Command   string            `json:"command"` // command to execute
-	StartTime time.Time         `json:"at"`      // when to execute this command
-	Options   map[string]string `json:"options"` // agent-specific options to be passed through
+	Command   string    `json:"command"` // command to execute
+	StartTime time.Time `json:"at"`      // when to execute this command
+	Options   string    `json:"options"` // agent-specific options to be passed through
 }
 
 type RunTaskResponse struct {
@@ -34,6 +35,10 @@ func (ctr *RunTaskRequest) Bind(r *http.Request) error {
 	}
 
 	return nil
+}
+
+func (ctr *RunTaskRequest) ParseOptions(v any) error {
+    return json.Unmarshal([]byte(ctr.Options), v)
 }
 
 func RunTask(cb RunTaskCallback) http.HandlerFunc {

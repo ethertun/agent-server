@@ -48,6 +48,7 @@ func BearerAuth(key string) func(http.Handler) http.Handler {
 	f := func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			if token != r.Header.Get(authentication) {
+                slog.Error("authentication failed: bad token")
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -79,6 +80,7 @@ func NewServer(authToken string, callbacks Callbacks) *AgentServer {
 
 	// all routes from here down require authentication
 	r.Get("/healthz", endpoints.Healthz)
+    r.Get("/capabilities", endpoints.Capabilities)
 	r.Post("/task/run", endpoints.RunTask(callbacks.RunTask))
 
 	return &AgentServer{router: r}
