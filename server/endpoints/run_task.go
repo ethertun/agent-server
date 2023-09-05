@@ -1,7 +1,6 @@
 package endpoints
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -10,12 +9,13 @@ import (
 
 	"github.com/ethertun/agent-server/server/errors"
 	"github.com/go-chi/render"
+	"github.com/mitchellh/mapstructure"
 )
 
 type RunTaskRequest struct {
-	Command   string    `json:"command"` // command to execute
-	StartTime time.Time `json:"at"`      // when to execute this command
-	Options   string    `json:"options"` // agent-specific options to be passed through
+	Command   string         `json:"command"` // command to execute
+	StartTime time.Time      `json:"at"`      // when to execute this command
+	Options   map[string]any `json:"options"` // agent-specific options to be passed through
 }
 
 type RunTaskResponse struct {
@@ -38,7 +38,22 @@ func (ctr *RunTaskRequest) Bind(r *http.Request) error {
 }
 
 func (ctr *RunTaskRequest) ParseOptions(v any) error {
-    return json.Unmarshal([]byte(ctr.Options), v)
+    cfg := &mapstructure.DecoderConfig{
+        TagName: "json",
+        Result: v,
+    }
+
+    decoder, err := mapstructure.NewDecoder(cfg)
+    if err != nil {
+        return fmt.Errorf("unable to build decoder for request options: %w", err)
+    }
+
+    err = decoder.Decode(ctr.Options)
+    if err != nil {
+        return fmt.Errorf("unable to parse task request options: %w", err)
+    }
+
+    return nil
 }
 
 func RunTask(cb RunTaskCallback) http.HandlerFunc {
