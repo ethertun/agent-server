@@ -13,9 +13,10 @@ import (
 )
 
 type RunTaskRequest struct {
-	Command   string         `json:"command"` // command to execute
-	StartTime time.Time      `json:"at"`      // when to execute this command
-	Options   map[string]any `json:"options"` // agent-specific options to be passed through
+	Command        string         `json:"command"`        // command to execute
+	StartTime      time.Time      `json:"at"`             // when to execute this command
+	Options        map[string]any `json:"options"`        // agent-specific options to be passed through
+	Infrastructure map[string]any `json:"infrastructure"` // what infrastructure to use
 }
 
 type RunTaskResponse struct {
@@ -38,22 +39,22 @@ func (ctr *RunTaskRequest) Bind(r *http.Request) error {
 }
 
 func (ctr *RunTaskRequest) ParseOptions(v any) error {
-    cfg := &mapstructure.DecoderConfig{
-        TagName: "json",
-        Result: v,
-    }
+	cfg := &mapstructure.DecoderConfig{
+		TagName: "json",
+		Result:  v,
+	}
 
-    decoder, err := mapstructure.NewDecoder(cfg)
-    if err != nil {
-        return fmt.Errorf("unable to build decoder for request options: %w", err)
-    }
+	decoder, err := mapstructure.NewDecoder(cfg)
+	if err != nil {
+		return fmt.Errorf("unable to build decoder for request options: %w", err)
+	}
 
-    err = decoder.Decode(ctr.Options)
-    if err != nil {
-        return fmt.Errorf("unable to parse task request options: %w", err)
-    }
+	err = decoder.Decode(ctr.Options)
+	if err != nil {
+		return fmt.Errorf("unable to parse task request options: %w", err)
+	}
 
-    return nil
+	return nil
 }
 
 func RunTask(cb RunTaskCallback) http.HandlerFunc {
