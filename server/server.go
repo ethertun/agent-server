@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -17,7 +18,7 @@ type Callbacks struct {
 }
 
 type AgentServer struct {
-	router chi.Router
+    server *http.Server
 }
 
 var (
@@ -67,12 +68,24 @@ func BearerAuth(key string) func(http.Handler) http.Handler {
 	return f
 }
 
-func (a *AgentServer) Start(port int16) {
-	slog.Info("starting agent server", "port", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), a.router)
+func (a *AgentServer) Start() {
+    // create the HTTP server
+	slog.Info("starting agent server", "address", a.server.Addr)
+    err := a.server.ListenAndServe()
+    if err != nil && err != http.ErrServerClosed {
+        slog.Error("unable to start agent server", "error", err)
+    }
+
+    slog.Info("stopped agent server")
 }
 
-func NewServer(authToken string, callbacks Callbacks) *AgentServer {
+func (a *AgentServer) Stop(ctx context.Context) {
+    if err := a.server.Shutdown(ctx); err != nil {
+        slog.Error("unable to shutdown server", "error", err)
+    }
+}
+
+func NewServer(port int16, authToken string, callbacks Callbacks) *AgentServer {
 	setDefaultResponder()
 	r := chi.NewRouter()
 
@@ -88,5 +101,6 @@ func NewServer(authToken string, callbacks Callbacks) *AgentServer {
 	r.Get("/capabilities", endpoints.Capabilities)
 	r.Post("/task/run", endpoints.RunTask(callbacks.RunTask))
 
-	return &AgentServer{router: r}
+    server := &http.Server{Addr: fmt.Sprintf(":%d", port), Handler: r}
+    return &AgentServer{server: server}
 }

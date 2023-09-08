@@ -56,8 +56,8 @@ func run(cmd *cobra.Command, args []string) error {
 		RunTask: run_task,
 	}
 
-	server := server.NewServer(token, callbacks)
-	server.Start(port)
+	server := server.NewServer(port, token, callbacks)
+	server.Start()
 
 	return nil
 }
